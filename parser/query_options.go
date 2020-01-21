@@ -5,7 +5,7 @@ type queryOptions struct {
 	equivalent string // the equivalent of the current option in sql (orderby => order by)
 }
 
-var supported_options []queryOptions = []queryOptions{
+var supportedQueryOptions []queryOptions = []queryOptions{
 	{name: "orderby", equivalent: "ORDER BY"},
 	{name: "asc", equivalent: "ASC"},
 	{name: "desc", equivalent: "DESC"},
