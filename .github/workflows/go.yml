@@ -21,3 +21,5 @@ jobs:
           fi
       - name: Test
         run: go test . ./...
+      - name: Benchmark
+        run: go test -bench . ./... -benchmem
