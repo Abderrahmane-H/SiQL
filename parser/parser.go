@@ -119,6 +119,9 @@ func readToken(reader *strings.Reader) (string, string, error) {
 	nextToken := ""
 	for {
 		b, err := reader.ReadByte()
+		if b == 32 { // ignore spaces
+			continue
+		}
 		if err == io.EOF {
 			if len(word) > 0 {
 				break

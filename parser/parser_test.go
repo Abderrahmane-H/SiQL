@@ -50,7 +50,7 @@ func BenchmarkParseToTree51QueryLength(b *testing.B) {
 func BenchmarkParseToTree103QueryLength(b *testing.B) {
 	// run the Fib function b.N times
 	for n := 0; n < b.N; n++ {
-		ParseToTree("select users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]")
+		ParseToTree("select users[id, email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]")
 	}
 }
 
