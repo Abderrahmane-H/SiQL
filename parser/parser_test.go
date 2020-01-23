@@ -41,6 +41,14 @@ func TestParseToTree(t *testing.T) {
 	}
 }
 
+func TestParseToTreeInvalidQuery(t *testing.T) {
+	query := "select users[id,email,,password,firstname,lastname]"
+	_, _, err := ParseToTree(query)
+	if err == nil {
+		t.Fatal("expected err to be not nil but got nil")
+	}
+}
+
 func BenchmarkParseToTree51QueryLength(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		ParseToTree("select users[id,email,password,firstname,lastname]")

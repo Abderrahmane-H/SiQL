@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"io"
 	"strings"
 )
@@ -39,17 +40,24 @@ func ParseToTree(query string) (string, *queryTable, error) {
 		case "[":
 			// validate next token
 			// should be a character different than [, ], "," (start of a new identifier)
+			if next == "]" || next == "[" || next == "," {
+				return "", nil, fmt.Errorf("expected an identifier after [ but got %s", next)
+			}
 		case ",":
 			// validate next token
 			// should be a character different than [, ], "," (start of a new identifier)
+			if next == "]" || next == "[" || next == "," {
+				return "", nil, fmt.Errorf("expected an identifier after [ but got %s", next)
+			}
 		case "]":
+			// this means we finished reading a table columns and data
+			// so return to the parent table
 			if currentTable.parent != nil {
 				currentTable = currentTable.parent
 			}
-		case "golang.io.EOF": // end of string
 		default: // an identifier either table or column name or options
 			switch next {
-			case "[": // table, next elements are either columns or tables
+			case "[": // table
 				// tree not initialized yet (we read the first table)
 				if currentTable == nil {
 					treeRoot = &queryTable{
@@ -72,10 +80,14 @@ func ParseToTree(query string) (string, *queryTable, error) {
 					// set the current table to be the new one
 					currentTable = node
 				}
-			case "]": // column and the parent table is closed
+			case "]": // column, last one in the curent table
 				currentTable.columns = append(currentTable.columns, token)
 			case ",": // column
 				currentTable.columns = append(currentTable.columns, token)
+			case " ":
+				// just a space
+			default:
+				return "", nil, fmt.Errorf("Expected [, ] or \",\" after %s but got %s", token, next)
 			}
 		}
 		token, next, err = readToken(queryReader)
@@ -126,36 +138,28 @@ func readToken(reader *strings.Reader) (string, string, error) {
 			if len(word) > 0 {
 				break
 			} else {
-				nextToken = "golang.io.EOF"
-				word = "golang.io.EOF"
-				break
+				return "golang.io.EOF", "golang.io.EOF", nil
 			}
 		}
 		if b == 91 && len(word) > 0 { // we read a [ after reading a word (Table)
-			nextToken = string(b)
 			reader.UnreadByte()
-			break
-		} else if b == 91 { // we read [, after this all we will have are probably columns
-			nextToken = ""
-			break
+			return word, string(b), nil
+		} else if b == 91 && len(word) == 0 { // we read [, after this all we will have are probably columns
+			continue
 		}
 
 		if b == 44 && len(word) > 0 { // we read a "," after reading a word (Column)
-			nextToken = string(b)
 			reader.UnreadByte()
-			break
-		} else if b == 44 { // we read , then a after this we will have probably columns or another table
-			nextToken = ""
-			break
+			return word, string(b), nil
+		} else if b == 44 && len(word) == 0 {
+			continue
 		}
 
 		if b == 93 && len(word) > 0 { // we read ] after reading a word (table end)
-			nextToken = string(b)
 			reader.UnreadByte()
-			break
-		} else if b == 93 { // we read ] table end
-			nextToken = ""
-			break
+			return word, string(b), nil
+		} else if b == 93 && len(word) == 0 {
+			continue
 		}
 		word += string(b)
 	}
