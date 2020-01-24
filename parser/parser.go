@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const endOfQuery string = "golang.io.EOF"
+
 type queryTable struct {
 	// the name of the table
 	name string
@@ -24,73 +26,76 @@ type queryTable struct {
 	columns []string
 }
 
+func (c *queryTable) addColumn(column string) {
+	c.columns = append(c.columns, column)
+}
+
+func (c *queryTable) addChild(child *queryTable) {
+	c.childs = append(c.childs, child)
+}
+
+type tokenType byte
+
+const (
+	tableToken     tokenType = 1
+	columnToken    tokenType = 2
+	separatorToken tokenType = 3
+)
+
+type token struct {
+	Name   string
+	Type   tokenType
+	isLast bool
+}
+
 func ParseToTree(query string) (string, *queryTable, error) {
 	queryReader := strings.NewReader(query)
 	action := getAction(queryReader)
 
 	var treeRoot *queryTable
 	var currentTable *queryTable
+	var lastToken *token = &token{}
 
-	token, next, err := readToken(queryReader)
-	if err != nil {
-		return "", nil, err
-	}
-	for token != "golang.io.EOF" {
-		switch token {
-		case "[":
-			// validate next token
-			// should be a character different than [, ], "," (start of a new identifier)
-			if next == "]" || next == "[" || next == "," {
-				return "", nil, fmt.Errorf("expected an identifier after [ but got %s", next)
-			}
-		case ",":
-			// validate next token
-			// should be a character different than [, ], "," (start of a new identifier)
-			if next == "]" || next == "[" || next == "," {
-				return "", nil, fmt.Errorf("expected an identifier after [ but got %s", next)
-			}
-		case "]":
-			// this means we finished reading a table columns and data
-			// so return to the parent table
-			if currentTable.parent != nil {
-				currentTable = currentTable.parent
-			}
-		default: // an identifier either table or column name or options
-			switch next {
-			case "[": // table
-				// tree not initialized yet (we read the first table)
-				if currentTable == nil {
-					treeRoot = &queryTable{
-						name:    token,
-						childs:  nil,
-						columns: nil,
-						parent:  nil,
-					}
-					currentTable = treeRoot
-				} else {
-					// initialize a new table node
-					node := &queryTable{
-						name:    token,
-						childs:  nil,
-						columns: nil,
-						parent:  currentTable,
-					}
-					// add the table node to the childs of the current table
-					currentTable.childs = append(currentTable.childs, node)
-					// set the current table to be the new one
-					currentTable = node
+	for t, err := readToken(queryReader); err != io.EOF; t, err = readToken(queryReader) {
+		switch t.Type {
+		case tableToken:
+			lastToken.Name = "["
+			lastToken.Type = separatorToken
+			if currentTable == nil { // first Table
+				treeRoot = &queryTable{
+					name:    t.Name,
+					childs:  nil,
+					parent:  nil,
+					columns: nil,
 				}
-			case "]": // column, last one in the curent table
-				currentTable.columns = append(currentTable.columns, token)
-			case ",": // column
-				currentTable.columns = append(currentTable.columns, token)
-			case " ":
-				// just a space
-			default:
-				return "", nil, fmt.Errorf("Expected [, ] or \",\" after %s but got %s", token, next)
+				currentTable = treeRoot
+			} else { // child table
+				table := &queryTable{
+					name:    t.Name,
+					childs:  nil,
+					parent:  currentTable,
+					columns: nil,
+				}
+				currentTable.addChild(table)
+				currentTable = table
 			}
+		case columnToken:
+			lastToken.Name = ","
+			lastToken.Type = separatorToken
+			if currentTable == nil {
+				return "", nil, fmt.Errorf("unexpected token %s at positon %d", t.Name, getCurrentPosition(queryReader))
+			}
+			currentTable.addColumn(t.Name)
+			if t.isLast == true {
+				currentTable = currentTable.parent
+				lastToken.Name = "]"
+			}
+		case separatorToken:
+			if lastToken.Type == separatorToken && ((lastToken.Name == "]" && t.Name != "]" && t.Name != ",") || lastToken.Name == "," && t.Type == separatorToken) {
+				return "", nil, fmt.Errorf("Unexpected token %s at %d", string(t.Name), getCurrentPosition(queryReader))
+			}
+		default:
 		}
-		token, next, err = readToken(queryReader)
 	}
 
 	return action, treeRoot, nil
@@ -117,55 +122,65 @@ func getAction(reader *strings.Reader) string {
 	return action
 }
 
-// readToken -- reads current token and returns the current token and the next one
-// the read cursor is set back to the end of the current token
-// returned values :
-// (a_word, golang.io.EOF) end of string
-// (a_word, [) the read token is a table
-// (a_word, "") the read token is either [, "," or ]
-// (a_word, ",") the read token was a column and the we expect a column or a table after
-// (a_word, "]") end of current table expect query options if current table is parent,
-//    otherwise expect other columns or other tables
-func readToken(reader *strings.Reader) (string, string, error) {
-	word := ""
-	nextToken := ""
-	for {
-		b, err := reader.ReadByte()
-		if b == 32 { // ignore spaces
-			continue
+// readToken -- reads and returns a token
+func readToken(reader *strings.Reader) (*token, error) {
+	var word []byte = []byte{}
+	var separator byte = 0
+	for { // read until we find a separator or EOF
+		b, err := readByte(reader)
+		if err != nil { // could be io.EOF
+			return nil, err
 		}
-		if err == io.EOF {
-			if len(word) > 0 {
-				break
-			} else {
-				return "golang.io.EOF", "golang.io.EOF", nil
-			}
+		// we found a separator, break the loop
+		if isSeparator(b) && separator == 0 {
+			separator = b
+			break
 		}
-		if b == 91 && len(word) > 0 { // we read a [ after reading a word (Table)
-			reader.UnreadByte()
-			return word, string(b), nil
-		} else if b == 91 && len(word) == 0 { // we read [, after this all we will have are probably columns
-			continue
+		// not a separator
+		if isValidByte(b) == false { // make sure the byte is valid character
+			return nil, fmt.Errorf("Unexpected token %s at %d", string(b), getCurrentPosition(reader))
 		}
 
-		if b == 44 && len(word) > 0 { // we read a "," after reading a word (Column)
-			reader.UnreadByte()
-			return word, string(b), nil
-		} else if b == 44 && len(word) == 0 {
-			continue
-		}
-
-		if b == 93 && len(word) > 0 { // we read ] after reading a word (table end)
-			reader.UnreadByte()
-			return word, string(b), nil
-		} else if b == 93 && len(word) == 0 {
-			continue
-		}
-		word += string(b)
+		word = append(word, b)
 	}
-	return word, nextToken, nil
+
+	if len(word) > 0 {
+		switch separator {
+		case 91: // [
+			return &token{Name: string(word), Type: tableToken}, nil
+		case 44: // ,
+			return &token{Name: string(word), isLast: false, Type: columnToken}, nil
+		case 93: // ]
+			return &token{Name: string(word), isLast: true, Type: columnToken}, nil
+		default:
+			return nil, fmt.Errorf("Unexpected token %s at %d, expected [ or ] or ,", string(separator), getCurrentPosition(reader))
+		}
+	} else {
+		return &token{Name: string(separator), Type: separatorToken}, nil
+	}
 }
 
-func isValidQueryCharacter(identifier string) bool {
-	return true
+func readByte(reader *strings.Reader) (byte, error) {
+	b, err := reader.ReadByte()
+	// ignore whitespaces
+	for isWhiteSpace(b) {
+		b, err = reader.ReadByte()
+	}
+	return b, err
+}
+
+func isWhiteSpace(b byte) bool {
+	return (b == 32 || b == 10 || b == 13 || b == 9)
+}
+
+func isSeparator(b byte) bool {
+	return (b == 91 || b == 93 || b == 44 || b == 123 || b == 125)
+}
+
+func isValidByte(b byte) bool {
+	return (b >= 97 && b <= 122) || (b >= 65 && b <= 90) || (b == 42) || (b == 95)
+}
+
+func getCurrentPosition(reader *strings.Reader) int64 {
+	return reader.Size() - int64(reader.Len())
 }
