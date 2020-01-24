@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-func ParseToTree(query string) (string, *queryTable, error) {
+func parseToTree(query string) (string, *queryTable, error) {
 	queryReader := newReader(query)
 	action := queryReader.getAction()
 

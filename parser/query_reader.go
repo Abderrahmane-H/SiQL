@@ -23,19 +23,19 @@ type token struct {
 }
 
 type queryReader struct {
-	*strings.Reader
+	reader   *strings.Reader
 	position int64
 	line     int64 // todo
 }
 
 func (r *queryReader) readNext() (byte, error) {
-	b, err := r.ReadByte()
+	b, err := r.reader.ReadByte()
 	if err == nil {
 		r.position++
 	}
 	// ignore whitespaces
 	for isWhiteSpace(b) {
-		b, err = r.ReadByte()
+		b, err = r.reader.ReadByte()
 		if err == nil {
 			r.position++
 		}
@@ -91,9 +91,9 @@ func (r *queryReader) readToken() (*token, error) {
 func (r *queryReader) getAction() string {
 	action := ""
 	for {
-		b, err := r.ReadByte()
+		b, err := r.reader.ReadByte()
 		if err == io.EOF {
-			r.UnreadByte()
+			r.reader.UnreadByte()
 			break
 		}
 		if b == 32 {
@@ -117,5 +117,5 @@ func isValidByte(b byte) bool {
 }
 
 func newReader(query string) *queryReader {
-	return &queryReader{Reader: strings.NewReader(query), position: 0, line: 0}
+	return &queryReader{reader: strings.NewReader(query), position: 0, line: 0}
 }

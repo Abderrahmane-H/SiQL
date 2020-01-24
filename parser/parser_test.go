@@ -7,7 +7,7 @@ import (
 
 func TestParseToTree(t *testing.T) {
 	query := "select users[id,email,password,firstname,lastname]"
-	action, tree, err := ParseToTree(query)
+	action, tree, err := parseToTree(query)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestParseToTree(t *testing.T) {
 
 func TestParseToTreeTableBetweenColumns(t *testing.T) {
 	query := "select users[id,email,password,firstname,products[id, email],lastname]"
-	action, tree, err := ParseToTree(query)
+	action, tree, err := parseToTree(query)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestParseToTreeTableBetweenColumns(t *testing.T) {
 
 func TestParseToTreeNestedTables(t *testing.T) {
 	query := "select users[id, email,password,firstname,lastname,products[id,title,description,created_at,updated_at]]"
-	action, tree, err := ParseToTree(query)
+	action, tree, err := parseToTree(query)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestParseToTreeNestedTables(t *testing.T) {
 
 func TestParseToTreeInvalidQuery(t *testing.T) {
 	query := "select users[id,email,,password,firstname,lastname]"
-	_, _, err := ParseToTree(query)
+	_, _, err := parseToTree(query)
 	if err == nil {
 		t.Fatal("expected err to be not nil but got nil")
 	}
@@ -136,34 +136,34 @@ func TestParseToTreeInvalidQuery(t *testing.T) {
 
 func BenchmarkParseToTree51QueryLength(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		ParseToTree("select users[id,email,password,firstname,lastname]")
+		parseToTree("select users[id,email,password,firstname,lastname]")
 	}
 }
 
 func BenchmarkParseToTree103QueryLength(b *testing.B) {
 	// run the Fib function b.N times
 	for n := 0; n < b.N; n++ {
-		ParseToTree("select users[id, email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]")
+		parseToTree("select users[id, email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]")
 	}
 }
 
 func BenchmarkParseToTree200QueryLength(b *testing.B) {
 	// run the Fib function b.N times
 	for n := 0; n < b.N; n++ {
-		ParseToTree("select users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]")
+		parseToTree("select users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]")
 	}
 }
 
 func BenchmarkParseToTree400QueryLength(b *testing.B) {
 	// run the Fib function b.N times
 	for n := 0; n < b.N; n++ {
-		ParseToTree("select users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]]")
+		parseToTree("select users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]]")
 	}
 }
 
 func BenchmarkParseToTree5400QueryLength(b *testing.B) {
 	// run the Fib function b.N times
 	for n := 0; n < b.N; n++ {
-		ParseToTree("select users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]]]")
+		parseToTree("select users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]],users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at,users[id,email,password,firstname,lastname,products[id,title,descritpion,created_at,updated_at]]]]]]")
 	}
 }
