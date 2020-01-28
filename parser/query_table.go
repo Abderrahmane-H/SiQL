@@ -18,10 +18,10 @@ type queryTable struct {
 	columns []string
 }
 
-func (c *queryTable) addColumn(column string) {
+func (c *queryTable) Addcolumn(column string) {
 	c.columns = append(c.columns, column)
 }
 
-func (c *queryTable) addChild(child *queryTable) {
+func (c *queryTable) AddChild(child *queryTable) {
 	c.childs = append(c.childs, child)
 }
