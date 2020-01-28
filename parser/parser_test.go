@@ -43,3 +43,17 @@ func TestParse3NestedTables(t *testing.T) {
 		t.Fatalf("wrong sql %s expected %s", sql, eqSQL)
 	}
 }
+
+func BenchmarkParse50(b *testing.B) {
+	query := "select users[id,email,products[id, company[id]]]"
+	for i := 0; i < b.N; i++ {
+		parse(query)
+	}
+}
+
+func BenchmarkParse100(b *testing.B) {
+	query := "select users[id,email, password, lastname, firstname, city_id, country_id, updated_at,products[id, company[id]]]"
+	for i := 0; i < b.N; i++ {
+		parse(query)
+	}
+}
